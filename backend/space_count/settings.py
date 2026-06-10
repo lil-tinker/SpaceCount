@@ -51,8 +51,8 @@ REST_FRAMEWORK = {
 
 X_FRAME_OPTIONS = "ALLOWALL"
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
-CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+CSRF_TRUSTED_ORIGINS = [x for x in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if x]
+CORS_ALLOWED_ORIGINS = [x for x in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if x]
 CORS_ALLOWED_ORIGIN_REGEXES = []
 CORS_URLS_REGEX = r'^/(api|auth)/.*$'
 
