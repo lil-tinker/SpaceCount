@@ -61,7 +61,7 @@ services:
     image: certbot/certbot
     volumes:
       - ./certbot/www:/var/www/certbot
-      - certbot_certs:/etc/letsencrypt
+      - ./certbot/conf:/etc/letsencrypt
 
 volumes:
   postgres_data:
