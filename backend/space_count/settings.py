@@ -50,12 +50,11 @@ REST_FRAMEWORK = {
 }
 
 X_FRAME_OPTIONS = "ALLOWALL"
-
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
 CORS_ALLOWED_ORIGIN_REGEXES = []
-
-CORS_URLS_REGEX = r'^/api/widget/.*$'
+CORS_URLS_REGEX = r'^/(api|auth)/.*$'
 
 ROOT_URLCONF = 'space_count.urls'
 
