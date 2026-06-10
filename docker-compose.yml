@@ -60,6 +60,7 @@ services:
   certbot:
     image: certbot/certbot
     volumes:
+      - ./certbot/www:/var/www/certbot
       - certbot_certs:/etc/letsencrypt
 
 volumes:
