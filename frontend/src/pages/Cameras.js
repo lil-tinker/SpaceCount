@@ -16,10 +16,6 @@ const zoneColors = ["#f59e0b", "#22c55e", "#06b6d4", "#3b82f6", "#a855f7"];
 const CameraView = ({ cam }) => {
     const [imgReady, setImgReady] = useState(false);  
     const [timestamp, setTimestamp] = useState(() => Date.now());
-    useEffect(() => {
-        setImgReady(false);
-        setTimestamp(Date.now());
-    }, [cam.active, cam.url]);
     return (
         <div className="cam-snapshot">
             <CameraSnapshot 
@@ -149,10 +145,10 @@ export const Cameras = () => {
           <div key={cam.id} className="card flex-col-10">
             <div className="cam-card-flex">
               <div className="cam-card-name">{cam.name}</div>
-              <button className="cam-status" onClick={() => update(cam.id, { active: !cam.active })}>
+              <div className="cam-status">
                 <div className={`pulse ${cam.active ? "pulse-green" : "pulse-gray"}`}/>  
                 <div className="second-text">{cam.active ? "Online" : "Offline"}</div>
-              </button>
+              </div>
             </div>
             <div className="flex-row-10">
                 <div className="second-text">URL:</div>

@@ -254,7 +254,7 @@ def sse_cameras(request):
         while True:
             token = request.GET.get("token")
             user = Token.objects.get(key=token).user
-            cameras = Camera.objects.filter(user=user, active=True).prefetch_related(
+            cameras = Camera.objects.filter(user=user).prefetch_related(
                 lastCameraAnalysis(),
                 Prefetch("zones", queryset=Zone.objects.prefetch_related(lastZoneStat()))
             )

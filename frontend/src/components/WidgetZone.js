@@ -29,7 +29,7 @@ const ZoneCard = ({ item }) => {
 export const WidgetZone = ({ name, cameras = [], zones = [] }) => {
   return (
     <div className="card flex-col-10">
-      <div className='widget-title'>Счётчик посетителей {!!name && " - " + name}</div>
+      <div className='widget-title'>{name}</div>
       {cameras.map(cam => <ZoneCard key={"camera_"+cam.camera_id} item={cam}/>)}
       {zones.map(zon => <ZoneCard key={"zone_"+zon.zone_id} item={zon}/>)}
     </div>

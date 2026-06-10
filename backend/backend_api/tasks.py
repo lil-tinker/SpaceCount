@@ -14,7 +14,7 @@ def count_one_camera(cameraId):
 
 def count_visitors():
     now = timezone.now()
-    cameras = Camera.objects.filter(active=True).prefetch_related('zones', 'auth')
+    cameras = Camera.objects.prefetch_related('zones', 'auth')
     for camera in cameras:
         if not isWorkingTime(camera, now.time()):
             continue

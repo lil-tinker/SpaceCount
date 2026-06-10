@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from .models import *
+from django.utils import timezone
 
 class ZoneDetailSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
@@ -57,6 +58,7 @@ class ZoneInfoSerializer(serializers.ModelSerializer):
 
 class CameraInfoSerializer(serializers.ModelSerializer):
     last_count = serializers.SerializerMethodField()
+    active = serializers.SerializerMethodField()
     zones = ZoneInfoSerializer(many=True, read_only=True)
     from_time = serializers.TimeField(format='%H:%M')
     to_time = serializers.TimeField(format='%H:%M')
@@ -67,6 +69,17 @@ class CameraInfoSerializer(serializers.ModelSerializer):
     def get_last_count(self, obj):
         last = obj.last_analysis[0] if obj.last_analysis else None
         return last.count if last else 0
+
+    def get_active(self, obj, ):
+        f = obj.from_time
+        t = obj.to_time
+        current_time = timezone.now().time()
+        if f == t:
+            return True
+        elif f < t:
+            return f <= current_time <= t
+        else:
+            return current_time >= f or current_time <= t
 
 class ZoneNameSerializer(serializers.ModelSerializer):
     class Meta:

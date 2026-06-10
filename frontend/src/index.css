@@ -422,14 +422,8 @@
   padding: 4px 10px; 
   border-radius: 6px; 
   border: 1px solid #2a3040; 
-  cursor: pointer; 
   background: none;
   transition: all 0.15s;
-} 
-.cam-status:hover {
-  background: #1e2736;
-  color: #94a3b8;
-  border-color: #3b5a80; 
 }
 .cam-url {
   background: #0a0c10; 

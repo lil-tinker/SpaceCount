@@ -18,6 +18,10 @@ const WidgetCard = ({ widget, onDelete, onCopy }) => {
   return (
     <div className="card right-column">
       <WidgetZone name={widget.name} cameras={widget.cameras} zones={widget.zones}/>
+      <div className="flex-row-10">
+        <div className="second-text">ifream URL:</div>
+        <div className="second-text cam-url">{widgetUrl}</div>
+      </div>
       <div className="widget-card-flex-buttons">
         <button className="btn btn-gray" onClick={() => onCopy(widgetUrl)}>Копировать URL</button>
         <button className="btn btn-delete" onClick={() => onDelete(widget.id, widget.name)}>Удалить</button>
