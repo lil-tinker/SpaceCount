@@ -18,8 +18,6 @@ export const Menu = () => {
     // { to: "/reports", label: "Отчеты", icon: <ReportIcon /> },
     // { to: "/users", label: "Пользователи", icon: <UserIcon /> },
   ];
-  console.log("username из storage:", localStorage.getItem("username"));
-  console.log("все ключи:", Object.keys(localStorage));
   const username = localStorage.getItem("username") || "User";
   return (
     <div className='slide-bar'>

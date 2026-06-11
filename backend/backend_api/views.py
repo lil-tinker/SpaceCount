@@ -155,7 +155,10 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         token, _ = Token.objects.get_or_create(user=user)
-        return Response({"token": token.key})
+        return Response({
+            'token': token.key,
+            'username': user.username,
+        })
 
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
