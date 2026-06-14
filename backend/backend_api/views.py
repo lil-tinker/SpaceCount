@@ -200,7 +200,7 @@ class WidgetTokenView(APIView):
         serializer = WidgetTokenSerializer(widget)
         return Response(serializer.data)
 
-@api_view(['GET'])
+# @api_view(['GET'])
 @permission_classes([AllowAny])
 def sse_widget(request, token):
     def event_stream():
@@ -252,7 +252,7 @@ def sse_widget(request, token):
     response["Cache-Control"] = "no-cache"
     return response
 
-@api_view(['GET'])
+# @api_view(['GET'])
 def sse_cameras(request):
     def event_stream():
         lastIds = {}
@@ -290,7 +290,7 @@ def sse_cameras(request):
     response['Cache-Control'] = 'no-cache'
     return response
 
-@api_view(['GET'])
+# @api_view(['GET'])
 def sse_widgets(request):
     def event_stream():
         while True:
@@ -343,12 +343,13 @@ def sse_widgets(request):
     response["Cache-Control"] = "no-cache"
     return response
 
-@api_view(['GET'])
+# @api_view(['GET'])
+@permission_classes([AllowAny])
 def camera_snapshot(request, camera_id):
     try:
         camera = Camera.objects.select_related("auth").get(id=camera_id)
-        if camera.user != request.user and not request.user.is_superuser:
-            raise PermissionDenied()
+        # if camera.user != request.user and not request.user.is_superuser:
+        #     raise PermissionDenied()
         content, content_type = getSnapshot(camera)
         if content is None:
             return HttpResponse(status=502)
@@ -358,7 +359,8 @@ def camera_snapshot(request, camera_id):
     except Camera.DoesNotExist:
         return HttpResponse(status=404)
 
-@api_view(['GET'])
+# @api_view(['GET'])
+@permission_classes([AllowAny])
 def camera_snapshot_url(request):
     url = request.query_params.get('url')
     if not url:
