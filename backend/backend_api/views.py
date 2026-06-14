@@ -295,26 +295,26 @@ def sse_cameras(request):
 
 def sse_widgets(request):
     def event_stream():
+        token = request.GET.get("token")
         while True:
-            token = request.GET.get("token")
             user = Token.objects.get(key=token).user
-            widgets_fresh = Widget.objects.filter(
+            widgets_fresh = list(Widget.objects.filter(
                 Q(widget_cameras__camera__user=user) |
                 Q(widget_zones__zone__camera__user=user)
             ).distinct().prefetch_related(
-            Prefetch(
-                "widget_cameras",
-                queryset=WidgetCamera.objects.prefetch_related(
-                    lastCameraAnalysis(2, "camera__analysis")
-                ).select_related("camera")
-            ),
-            Prefetch(
-                "widget_zones",
-                queryset=WidgetZone.objects.select_related("zone", "zone__camera").prefetch_related(
-                    lastZoneStat(2, "zone__statistics")
+                Prefetch(
+                    "widget_cameras",
+                    queryset=WidgetCamera.objects.prefetch_related(
+                        lastCameraAnalysis(2, "camera__analysis")
+                    ).select_related("camera")
+                ),
+                Prefetch(
+                    "widget_zones",
+                    queryset=WidgetZone.objects.select_related("zone", "zone__camera").prefetch_related(
+                        lastZoneStat(2, "zone__statistics")
                     )
                 )
-            )
+            ))
             result = []
             for widget in widgets_fresh:
                 cameras = []
@@ -340,7 +340,6 @@ def sse_widgets(request):
                 result.append({"widget_id": widget.id, "cameras": cameras, "zones": zones})
             yield f"data: {json.dumps(result)}\n\n"
             time.sleep(30)
-
     response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     response["Cache-Control"] = "no-cache"
     return response
