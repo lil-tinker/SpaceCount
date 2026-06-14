@@ -253,6 +253,7 @@ def sse_widget(request, token):
     return response
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def sse_cameras(request):
     def event_stream():
         lastIds = {}
@@ -291,6 +292,7 @@ def sse_cameras(request):
     return response
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def sse_widgets(request):
     def event_stream():
         while True:
@@ -344,11 +346,10 @@ def sse_widgets(request):
     return response
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def camera_snapshot(request, camera_id):
     try:
         camera = Camera.objects.select_related("auth").get(id=camera_id)
-        if camera.user != request.user and not request.user.is_superuser:
-            raise PermissionDenied()
         content, content_type = getSnapshot(camera)
         if content is None:
             return HttpResponse(status=502)
@@ -359,6 +360,7 @@ def camera_snapshot(request, camera_id):
         return HttpResponse(status=404)
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def camera_snapshot_url(request):
     url = request.query_params.get('url')
     if not url:
