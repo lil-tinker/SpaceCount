@@ -200,7 +200,6 @@ class WidgetTokenView(APIView):
         serializer = WidgetTokenSerializer(widget)
         return Response(serializer.data)
 
-@api_view(['GET'])
 @permission_classes([AllowAny])
 def sse_widget(request, token):
     def event_stream():
@@ -252,8 +251,7 @@ def sse_widget(request, token):
     response["Cache-Control"] = "no-cache"
     return response
 
-@api_view(['GET'])
-@permission_classes([AllowAny])
+# @permission_classes([AllowAny])
 def sse_cameras(request):
     def event_stream():
         lastIds = {}
@@ -291,7 +289,6 @@ def sse_cameras(request):
     response['Cache-Control'] = 'no-cache'
     return response
 
-@api_view(['GET'])
 @permission_classes([AllowAny])
 def sse_widgets(request):
     def event_stream():
