@@ -12,23 +12,29 @@ from rest_framework import status
 from .serializers import *
 from .services import *
 from .models import *
-import requests
 import time
 import json
 
 def lastCameraAnalysis(count=1, related_name="analysis"):
     return Prefetch(related_name,
         queryset=CameraAnalysis.objects.filter(
-            id__in=Subquery(CameraAnalysis.objects.filter(
-                camera_id=OuterRef("camera_id")).values("id")[:count])),
+            id__in=Subquery(
+                CameraAnalysis.objects.filter(
+                    camera_id=OuterRef("camera_id")
+                ).order_by("-date").values("id")[:count]
+            )
+        ).order_by("-date"),
         to_attr="last_analysis")
 
 def lastZoneStat(count=1, related_name="statistics"):
     return Prefetch(related_name,
         queryset=ZoneStatistics.objects.filter(
-            camera_analysis_id__in=Subquery(CameraAnalysis.objects.filter(
-                camera_id=OuterRef("zone__camera_id")).values("id")[:count])
-                ).order_by("-camera_analysis__date"),
+            camera_analysis_id__in=Subquery(
+                CameraAnalysis.objects.filter(
+                    camera_id=OuterRef("zone__camera_id")
+                ).order_by("-date").values("id")[:count]
+            )
+        ).order_by("-camera_analysis__date"),
         to_attr="last_statistics")
 
 class CameraListView(APIView):
