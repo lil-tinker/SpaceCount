@@ -201,7 +201,7 @@ class WidgetTokenView(APIView):
         return Response(serializer.data)
 
 # @api_view(['GET'])
-@permission_classes([AllowAny])
+# @permission_classes([AllowAny])
 def sse_widget(request, token):
     def event_stream():
         while True:
@@ -344,7 +344,7 @@ def sse_widgets(request):
     return response
 
 # @api_view(['GET'])
-@permission_classes([AllowAny])
+# @permission_classes([AllowAny])
 def camera_snapshot(request, camera_id):
     try:
         camera = Camera.objects.select_related("auth").get(id=camera_id)
@@ -360,7 +360,7 @@ def camera_snapshot(request, camera_id):
         return HttpResponse(status=404)
 
 # @api_view(['GET'])
-@permission_classes([AllowAny])
+# @permission_classes([AllowAny])
 def camera_snapshot_url(request):
     url = request.query_params.get('url')
     if not url:
