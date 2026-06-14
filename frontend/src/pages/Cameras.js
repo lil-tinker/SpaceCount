@@ -19,7 +19,7 @@ const CameraView = ({ cam }) => {
     return (
         <div className="cam-snapshot">
             <CameraSnapshot 
-                cam={{ active: cam.active, url: `/cameras/${cam.id}/snapshot/?t=${timestamp}` }} 
+                cam={{ active: cam.active, url: `/cameras/${id}/snapshot/` }} 
                 onLoad={() => setImgReady(true)} onError={() => setImgReady(false)}/>
             {imgReady && cam.active && <CameraZones zones={cam.zones} />}
         </div>
