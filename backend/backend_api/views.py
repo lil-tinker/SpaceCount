@@ -200,6 +200,7 @@ class WidgetTokenView(APIView):
         serializer = WidgetTokenSerializer(widget)
         return Response(serializer.data)
 
+@api_view(['GET'])
 @permission_classes([AllowAny])
 def sse_widget(request, token):
     def event_stream():
@@ -251,6 +252,7 @@ def sse_widget(request, token):
     response["Cache-Control"] = "no-cache"
     return response
 
+@api_view(['GET'])
 def sse_cameras(request):
     def event_stream():
         lastIds = {}
@@ -288,6 +290,7 @@ def sse_cameras(request):
     response['Cache-Control'] = 'no-cache'
     return response
 
+@api_view(['GET'])
 def sse_widgets(request):
     def event_stream():
         while True:
@@ -340,29 +343,29 @@ def sse_widgets(request):
     response["Cache-Control"] = "no-cache"
     return response
 
-@permission_classes([AllowAny])
+@api_view(['GET'])
 def camera_snapshot(request, camera_id):
     try:
         camera = Camera.objects.select_related("auth").get(id=camera_id)
-        # if camera.user != request.user and not request.user.is_superuser:
-        #     raise PermissionDenied()
-        url = camera.url
-        auth = None
-        if hasattr(camera, "auth"):
-            auth = (camera.auth.login, camera.auth.password)
-        resp = requests.get(
-            url,
-            auth=auth,
-            timeout=10,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "image/jpeg, image/*",
-                "Connection": "keep-alive",
-            }
-        )
-        return HttpResponse(resp.content, content_type=resp.headers.get('Content-Type', 'image/jpeg'))
+        if camera.user != request.user and not request.user.is_superuser:
+            raise PermissionDenied()
+        content, content_type = getSnapshot(camera)
+        if content is None:
+            return HttpResponse(status=502)
+        response = HttpResponse(content, content_type=content_type)
+        response['Cache-Control'] = 'no-store'
+        return response
     except Camera.DoesNotExist:
         return HttpResponse(status=404)
-    except Exception as e:
-        print(f"Exception: {e}")
+
+@api_view(['GET'])
+def camera_snapshot_url(request):
+    url = request.query_params.get('url')
+    if not url:
+        return HttpResponse(status=400)
+    content, content_type = fetch_snapshot(url)
+    if content is None:
         return HttpResponse(status=502)
+    response = HttpResponse(content, content_type=content_type)
+    response['Cache-Control'] = 'no-store'
+    return response

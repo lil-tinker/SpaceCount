@@ -57,7 +57,7 @@ export const CameraForm = () => {
         setZones(cam.zones);
         setFrameWasLoad(true);
         frameWasLoadRef.current = true;
-        setFrameUrl(cam.url + "?t=" + Date.now());
+        setFrameUrl(`/cameras/${id}/snapshot/`);
       } catch (error) {
         if (axios.isCancel(error)) return;
         setStatusMsg({ type: "error", text: "Не удалось загрузить данные камеры. Для создания новой заполните форму." });
@@ -99,7 +99,11 @@ export const CameraForm = () => {
     const parsedUrl = urlParseFunc(urlStr);
     setFrameLoad(false);
     setUrlCam(parsedUrl.cleanUrl);
-    setFrameUrl(parsedUrl.cleanUrl + "?t=" + Date.now());
+    if (isEdit && !isUserUrlChange.current) {
+      setFrameUrl(`/cameras/${id}/snapshot/`);
+    } else {
+      setFrameUrl(`/cameras/snapshot/?url=${encodeURIComponent(urlStr)}`);
+    }
   }
   const successLoad = useCallback(() => {
     if (!frameWasLoadRef.current) {

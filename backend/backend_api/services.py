@@ -1,3 +1,4 @@
+import requests
 from ultralytics import YOLO
 from shapely.geometry import Point, Polygon
 import numpy as np
@@ -117,3 +118,41 @@ class PeopleCountingService:
             "total": total,
             "zones": [{"name": name, "count": count} for name, count in zoneCounts.items()]
         }
+
+def isWorkingTime(camera, current_time):
+    f = camera.from_time
+    t = camera.to_time
+    if f == t:
+        return True
+    elif f < t:
+        return f <= current_time <= t
+    else:
+        return current_time >= f or current_time <= t
+
+def fetch_snapshot(url, login=None, password=None):
+    try:
+        auth = (login, password) if login and password else None
+        response = requests.get(
+            url,
+            auth=auth,
+            timeout=10,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "image/jpeg, image/*",
+                "Connection": "keep-alive",
+            }
+        )
+        response.raise_for_status()
+        return response.content, response.headers.get('Content-Type', 'image/jpeg')
+    except Exception as e:
+        print(f"[Snapshot] Ошибка получения снимка {url}: {e}")
+        return None, None
+
+def getSnapshot(camera):
+    login = None
+    password = None
+    if hasattr(camera, 'auth'):
+        login = camera.auth.login
+        password = camera.auth.password
+    content, content_type = fetch_snapshot(camera.url, login, password)
+    return content, content_type

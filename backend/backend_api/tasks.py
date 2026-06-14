@@ -1,5 +1,5 @@
 import requests
-from .services import PeopleCountingService
+from .services import PeopleCountingService, getSnapshot, isWorkingTime
 from django.utils import timezone
 from .models import *
 
@@ -25,23 +25,13 @@ def count_visitors():
                 continue
         analyzeCamera(camera)
 
-def isWorkingTime(camera, current_time):
-    f = camera.from_time
-    t = camera.to_time
-    if f == t:
-        return True
-    elif f < t:
-        return f <= current_time <= t
-    else:
-        return current_time >= f or current_time <= t
-
 def analyzeCamera(camera):
-    snapshot = getSnapshot(camera)
-    if snapshot is None:
+    content, _ = getSnapshot(camera)
+    if content is None:
         return
     zonesCamera = list(camera.zones.all())
     zones = [{"name": z.name, "points": z.points} for z in zonesCamera]
-    result = countingService.count(snapshot, zones)
+    result = countingService.count(content, zones)
     analysis = CameraAnalysis.objects.create(camera=camera, count=result['total'])
     zoneObjects = {z.name: z for z in zonesCamera}
     for zoneResult in result['zones']:
@@ -52,15 +42,3 @@ def analyzeCamera(camera):
                 zone=zone,
                 count=zoneResult['count']
             )
-
-def getSnapshot(camera):
-    try:
-        auth = None
-        if hasattr(camera, 'auth'):
-            auth = (camera.auth.login, camera.auth.password)
-        response = requests.get(camera.url, auth=auth, timeout=10)
-        response.raise_for_status()
-        return response.content
-    except Exception as e:
-        print(f"[Camera {camera.name}] Ошибка получения снимка: {e}")
-        return None

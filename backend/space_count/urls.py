@@ -5,6 +5,7 @@ from backend_api.views import *
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('cameras/<int:camera_id>/snapshot/', camera_snapshot),
+    path('cameras/snapshot/', camera_snapshot_url),
     path('api/cameras/sse/', sse_cameras),
     path('api/widgets/sse/', sse_widgets),
     path('api/widget/<uuid:token>/sse/', sse_widget),
