@@ -94,6 +94,7 @@ export const Widgets = () => {
     const authToken = localStorage.getItem("token");
     const es = new EventSource(`/api/widgets/sse/?token=${authToken}`);
     es.onmessage = (e) => {
+      console.log('SSE data:', e.data);
       const updates = JSON.parse(e.data);
       setWidgets(prev => prev.map(widget => {
         const update = updates.find(u => u.widget_id === widget.id);
