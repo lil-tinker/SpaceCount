@@ -16,7 +16,8 @@ import time
 import json
 
 def lastCameraAnalysis(count=1, related_name="analysis"):
-    return Prefetch(related_name,
+    return Prefetch(
+        related_name,
         queryset=CameraAnalysis.objects.filter(
             id__in=Subquery(
                 CameraAnalysis.objects.filter(
@@ -24,10 +25,12 @@ def lastCameraAnalysis(count=1, related_name="analysis"):
                 ).order_by("-date").values("id")[:count]
             )
         ).order_by("-date"),
-        to_attr="last_analysis")
+        to_attr="last_analysis"
+    )
 
 def lastZoneStat(count=1, related_name="statistics"):
-    return Prefetch(related_name,
+    return Prefetch(
+        related_name,
         queryset=ZoneStatistics.objects.filter(
             camera_analysis_id__in=Subquery(
                 CameraAnalysis.objects.filter(
@@ -35,7 +38,8 @@ def lastZoneStat(count=1, related_name="statistics"):
                 ).order_by("-date").values("id")[:count]
             )
         ).order_by("-camera_analysis__date"),
-        to_attr="last_statistics")
+        to_attr="last_statistics"
+    )
 
 class CameraListView(APIView):
     def get(self, request):
@@ -114,7 +118,7 @@ class WidgetListView(APIView):
                 raise PermissionDenied()
         return widget
         
-    def get(self, request):# .select_related("histogram_config")
+    def get(self, request):
         widgets = self.get_widgets(request.user).prefetch_related(
             Prefetch(
                 "widget_cameras",
@@ -187,7 +191,7 @@ class WidgetTokenView(APIView):
     permission_classes = [permissions.AllowAny]
     def get(self, request, token):
         try:
-            widget = Widget.objects.prefetch_related( # .select_related("histogram_config")
+            widget = Widget.objects.prefetch_related(
                 Prefetch(
                     "widget_cameras",
                     queryset=WidgetCamera.objects.select_related("camera").prefetch_related(
@@ -202,49 +206,61 @@ class WidgetTokenView(APIView):
                 )
             ).get(token=token)
         except Widget.DoesNotExist:
-            return Response({"detail": "Виджет не найден."}, status=404)
+            return Response({"detail": "Виджет не найден."}, status=status.HTTP_404_NOT_FOUND)
         serializer = WidgetTokenSerializer(widget)
         return Response(serializer.data)
 
 def sse_widget(request, token):
     def event_stream():
         while True:
-            widget_fresh = Widget.objects.prefetch_related(
-                Prefetch(
-                    "widget_cameras",
-                    queryset=WidgetCamera.objects.prefetch_related(
-                        lastCameraAnalysis(2, "camera__analysis")
-                    ).select_related("camera")
-                ),
-                Prefetch(
-                    "widget_zones",
-                    queryset=WidgetZone.objects.select_related("zone", "zone__camera").prefetch_related(
-                        lastZoneStat(2, "zone__statistics")
+            try:
+                widget_fresh = Widget.objects.prefetch_related(
+                    Prefetch(
+                        "widget_cameras",
+                        queryset=WidgetCamera.objects.prefetch_related(
+                            lastCameraAnalysis(2, "camera__analysis")
+                        ).select_related("camera")
+                    ),
+                    Prefetch(
+                        "widget_zones",
+                        queryset=WidgetZone.objects.select_related("zone", "zone__camera").prefetch_related(
+                            lastZoneStat(2, "zone__statistics")
+                        )
                     )
-                )
-            ).get(token=token)
+                ).get(token=token)
+            except Widget.DoesNotExist:
+                yield f"data: {json.dumps({'error': 'Widget not found'})}\n\n"
+                break
             result = {"cameras": [], "zones": []}
             for wc in widget_fresh.widget_cameras.all():
-                analyses = list(wc.camera.analysis.all())
-                count = analyses[0].count if analyses else 0
-                if len(analyses) < 2:
-                    trend = None
+                if hasattr(wc.camera, 'last_analysis') and wc.camera.last_analysis:
+                    analyses = wc.camera.last_analysis  # Уже список, не нужно list()
+                    count = analyses[0].count if analyses else 0
+                    if len(analyses) < 2:
+                        trend = None
+                    else:
+                        diff = analyses[0].count - analyses[1].count
+                        trend = f"+{diff}" if diff >= 0 else str(diff)
                 else:
-                    diff = analyses[0].count - analyses[1].count
-                    trend = f"+{diff}" if diff >= 0 else str(diff)
+                    count = 0
+                    trend = None
                 result["cameras"].append({
                     "camera_id": wc.camera.id,
                     "count": count,
                     "trend": trend,
                 })
             for wz in widget_fresh.widget_zones.all():
-                stats = list(wz.zone.statistics.all())
-                count = stats[0].count if stats else 0
-                if len(stats) < 2:
-                    trend = None
+                if hasattr(wz.zone, 'last_statistics') and wz.zone.last_statistics:
+                    stats = wz.zone.last_statistics
+                    count = stats[0].count if stats else 0
+                    if len(stats) < 2:
+                        trend = None
+                    else:
+                        diff = stats[0].count - stats[1].count
+                        trend = f"+{diff}" if diff >= 0 else str(diff)
                 else:
-                    diff = stats[0].count - stats[1].count
-                    trend = f"+{diff}" if diff >= 0 else str(diff)
+                    count = 0
+                    trend = None
                 result["zones"].append({
                     "zone_id": wz.zone.id,
                     "count": count,
@@ -259,9 +275,9 @@ def sse_widget(request, token):
 def sse_cameras(request):
     def event_stream():
         lastIds = {}
+        token = request.GET.get("token")
+        user = Token.objects.get(key=token).user
         while True:
-            token = request.GET.get("token")
-            user = Token.objects.get(key=token).user
             cameras = Camera.objects.filter(user=user).prefetch_related(
                 lastCameraAnalysis(),
                 Prefetch("zones", queryset=Zone.objects.prefetch_related(lastZoneStat()))
@@ -294,11 +310,15 @@ def sse_cameras(request):
     return response
 
 def sse_widgets(request):
+    token = request.GET.get("token")
     def event_stream():
-        token = request.GET.get("token")
         while True:
-            user = Token.objects.get(key=token).user
-            widgets_fresh = list(Widget.objects.filter(
+            try:
+                user = Token.objects.get(key=token).user
+            except Token.DoesNotExist:
+                yield f"data: {json.dumps({'error': 'Invalid token'})}\n\n"
+                break
+            widgets = Widget.objects.filter(
                 Q(widget_cameras__camera__user=user) |
                 Q(widget_zones__zone__camera__user=user)
             ).distinct().prefetch_related(
@@ -314,31 +334,52 @@ def sse_widgets(request):
                         lastZoneStat(2, "zone__statistics")
                     )
                 )
-            ))
+            )
             result = []
-            for widget in widgets_fresh:
+            for widget in widgets:
                 cameras = []
                 for wc in widget.widget_cameras.all():
-                    analyses = list(wc.camera.analysis.all())
-                    count = analyses[0].count if analyses else 0
-                    if len(analyses) < 2:
-                        trend = None
+                    if hasattr(wc.camera, 'last_analysis') and wc.camera.last_analysis:
+                        analyses = wc.camera.last_analysis
+                        count = analyses[0].count if analyses else 0
+                        if len(analyses) < 2:
+                            trend = None
+                        else:
+                            diff = analyses[0].count - analyses[1].count
+                            trend = f"+{diff}" if diff >= 0 else str(diff)
                     else:
-                        diff = analyses[0].count - analyses[1].count
-                        trend = f"+{diff}" if diff >= 0 else str(diff)
-                    cameras.append({"camera_id": wc.camera.id, "count": count, "trend": trend})
+                        count = 0
+                        trend = None
+                    cameras.append({
+                        "camera_id": wc.camera.id,
+                        "count": count,
+                        "trend": trend
+                    })
                 zones = []
                 for wz in widget.widget_zones.all():
-                    stats = list(wz.zone.statistics.all())
-                    count = stats[0].count if stats else 0
-                    if len(stats) < 2:
-                        trend = None
+                    if hasattr(wz.zone, 'last_statistics') and wz.zone.last_statistics:
+                        stats = wz.zone.last_statistics
+                        count = stats[0].count if stats else 0
+                        if len(stats) < 2:
+                            trend = None
+                        else:
+                            diff = stats[0].count - stats[1].count
+                            trend = f"+{diff}" if diff >= 0 else str(diff)
                     else:
-                        diff = stats[0].count - stats[1].count
-                        trend = f"+{diff}" if diff >= 0 else str(diff)
-                    zones.append({"zone_id": wz.zone.id, "count": count, "trend": trend})
-                result.append({"widget_id": widget.id, "cameras": cameras, "zones": zones})
-            yield f"data: {json.dumps(result)}\n\n"
+                        count = 0
+                        trend = None
+                    zones.append({
+                        "zone_id": wz.zone.id,
+                        "count": count,
+                        "trend": trend
+                    })
+                result.append({
+                    "widget_id": widget.id,
+                    "cameras": cameras,
+                    "zones": zones
+                })
+            if result:
+                yield f"data: {json.dumps(result)}\n\n"
             time.sleep(30)
     response = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     response["Cache-Control"] = "no-cache"

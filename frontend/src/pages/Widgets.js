@@ -60,7 +60,6 @@ export const Widgets = () => {
     setLoadError(null);
     try {
       const response = await AxiosAPI.get('/api/widgets/', { signal: controllerRef.current.signal });
-      console.log(response.data);
       setWidgets(response.data);
     } catch (error) {
       if (axios.isCancel(error)) return;
@@ -94,7 +93,6 @@ export const Widgets = () => {
     const authToken = localStorage.getItem("token");
     const es = new EventSource(`/api/widgets/sse/?token=${authToken}`);
     es.onmessage = (e) => {
-      console.log('SSE data:', e.data);
       const updates = JSON.parse(e.data);
       setWidgets(prev => prev.map(widget => {
         const update = updates.find(u => u.widget_id === widget.id);

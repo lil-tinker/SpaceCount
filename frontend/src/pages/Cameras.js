@@ -13,18 +13,27 @@ const SCHEDULE_OPTIONS = [
   { value: 60, label: "каждый час" },
 ];
 const zoneColors = ["#f59e0b", "#22c55e", "#06b6d4", "#3b82f6", "#a855f7"];
+
 const CameraView = ({ cam }) => {
-    const [imgReady, setImgReady] = useState(false);  
-    const [timestamp, setTimestamp] = useState(() => Date.now());
+    const [imgReady, setImgReady] = useState(false);
+    const [url, setUrl] = useState(`/cameras/${cam.id}/snapshot/?t=${Date.now()}`);
+
+    useEffect(() => {
+        setImgReady(false);
+        setUrl(`/cameras/${cam.id}/snapshot/?t=${Date.now()}`);
+    }, [cam.id]);
+
     return (
         <div className="cam-snapshot">
             <CameraSnapshot 
-                cam={{ active: cam.active, url: `/cameras/${cam.id}/snapshot/` }} 
-                onLoad={() => setImgReady(true)} onError={() => setImgReady(false)}/>
+                cam={{ active: cam.active, url: url }} 
+                onLoad={() => setImgReady(true)} 
+                onError={() => setImgReady(false)}/>
             {imgReady && cam.active && <CameraZones zones={cam.zones} />}
         </div>
     );
 };
+
 const ContainerPageCamera = ({ children, action }) => (
   <div className="content">
     <div className="header">

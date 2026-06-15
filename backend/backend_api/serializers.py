@@ -267,16 +267,9 @@ class WidgetInfoSerializer(serializers.ModelSerializer):
 class WidgetTokenSerializer(serializers.ModelSerializer):
     cameras = WidgetCameraInfoSerializer(source="widget_cameras", many=True)
     zones = WidgetZoneInfoSerializer(source="widget_zones", many=True)
-    #histogram_config = serializers.SerializerMethodField()
     class Meta:
         model = Widget
-        fields = ["name", "widget_type", "cameras", "zones"]  # , "histogram_config"
-
-    # def get_histogram_config(self, obj):
-    #     config = getattr(obj, "histogram_config", None)
-    #     if obj.widget_type == "histogram" and config:
-    #         return config.schedule
-    #     return None
+        fields = ["name", "widget_type", "cameras", "zones"]
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
